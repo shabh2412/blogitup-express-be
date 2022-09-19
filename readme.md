@@ -1,4 +1,4 @@
-# Express-Mongoose-Typescript Server Starter Template
+# Express-Mongoose-Typescript Server for blogging application
 
 **NOTE: You need to have a local setup of mongodb to use this template.**
 
