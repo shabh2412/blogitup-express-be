@@ -1,3 +1,6 @@
+import { HydratedDocument } from "mongoose";
+import { IUser } from "./interface";
+
 export type UserLoginDataType = {
 	email: string;
 	password: string;
@@ -32,7 +35,7 @@ export type tokenType = {
 	refreshToken?: string;
 };
 
-export type loginControllerSuccess = {
+export type userFound = {
 	data: userLoginSuccessData;
 	tokens: {
 		primaryToken: string;
@@ -40,6 +43,13 @@ export type loginControllerSuccess = {
 	};
 };
 
-export type loginControllerFailure = {
+export type errorWhileFindingUserInDb = {
+	message: string | any;
+};
+
+export type signupControllerSuccess = {
+	user: HydratedDocument<IUser>;
+};
+export type signupControllerFailure = {
 	message: string | any;
 };

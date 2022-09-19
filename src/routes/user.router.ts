@@ -1,18 +1,18 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import argon2 from "argon2";
-import { access } from "../permissions/acesses";
+import jwt, { Jwt, JwtPayload } from "jsonwebtoken";
 
 import { UserModel } from "../models";
 import axios from "axios";
-import {
-	IUser,
-	IUserLogin,
-	oAuthGHVerificationInterface,
-} from "../utils/interface";
+import { IUser, IUserLogin } from "../utils/interface";
 import { HydratedDocument } from "mongoose";
-import { tokenType } from "../utils/types";
-import { loginController } from "../controllers/user.controller";
+
+import {
+	doesUserExistInDb,
+	getUserDetails,
+	githubLogin,
+	loginController,
+	signupController,
+} from "../controllers/user.controller";
 const userRoute = express.Router();
 userRoute.use(express.json());
 
@@ -37,100 +37,23 @@ userRoute.post<any, any, any, IUserLogin>("/login", async (req, res) => {
 	}
 });
 
-const doesUserExistInDb = async (email: string) => {
-	const user = await UserModel.findOne({ email });
-	if (user) return true;
-	return false;
-};
-
 // OAUTH
-userRoute.post("/login/github", async (req, res) => {
-	const { code, state } = req.query;
-	// console.log(code, state);
-	try {
-		let response = await axios.post(
-			`https://github.com/login/oauth/access_token`,
-			null,
-			{
-				params: {
-					client_id: "c6c281322a00b7b88b67",
-					client_secret: "8cdd77e7580c67a7799522e5dc1e6bed5207c6e9",
-					code,
-				},
-				headers: {
-					accept: "application/json",
-				},
-			}
-		);
-		let resp = response.data;
-		let userData = await axios.get("https://api.github.com/user", {
-			headers: {
-				Authorization: `Bearer ${resp.access_token}`,
-				accept: "application/json",
-			},
-		});
-		let userDataFromGH = userData.data;
-		let userExists = await doesUserExistInDb(userDataFromGH.email);
-		if (!userExists) {
-			const { name, email, phone } = userDataFromGH;
-			const newUser = new UserModel({
-				name,
-				email,
-				phone,
-				viaOauth: true,
-			});
-			console.log(newUser);
-			await newUser.save();
-		}
-		console.log(userExists);
-		let user: HydratedDocument<IUser> | null = await UserModel.findOne({
-			email: userDataFromGH.email,
-		});
-		if (user) {
-			const userDataFromDB = {
-				_id: user._id,
-				name: user.name,
-				email: user.email,
-				phone: user.phone,
-				role: user.role || "user",
-				viaOauth: user.viaOauth,
-			};
-			let primaryToken = jwt.sign(userDataFromDB, "primaryToken", {
-				expiresIn: "1 hour",
-			});
-			let refreshToken = jwt.sign(userDataFromDB, "refreshToken", {
-				expiresIn: "7 days",
-			});
-			return res.status(200).send({
-				data: userDataFromDB,
-				tokens: {
-					primaryToken,
-					refreshToken,
-				},
-			});
-		}
-	} catch (error) {
-		res.status(401).send({
-			error,
-		});
+userRoute.post<any, any, any, any, { code: string }>(
+	"/login/github",
+	async (req, res) => {
+		const { code } = req.query;
+		// console.log(code, state);
+		res.send(await githubLogin(code));
 	}
-});
+);
 
 // signup
 userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
 	let data = req.body;
 	if (data.name && data.email && data.password && data.phone) {
-		try {
-			const passwordHash = await argon2.hash(data.password);
-			data.password = passwordHash;
-			let user: HydratedDocument<IUser> = new UserModel(data);
-			await user.save();
-			res.status(201).send({ user });
-		} catch (err) {
-			res.send(err);
-		}
+		res.send(await signupController(data));
 	} else {
-		res.send("body is missing required data.");
+		res.send({ message: "body is missing required data." });
 	}
 });
 
@@ -163,31 +86,23 @@ userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
 // // });
 
 // get details of logged in user.
-// userRoute.get("/", async (req, res) => {
-// 	const authorization = req.headers.authorization;
-// 	if (authorization) {
-// 		const auth = authorization.split(" ");
-// 		const token: tokenType = {};
-// 		token.refreshToken = auth[1];
-// 		// console.log(token.refreshToken);
-// 		try {
-// 			let data = jwt.verify(token.refreshToken, "refreshToken");
-// 			// console.log(data);
-// 			if (data.email) {
-// 				delete data.iat;
-// 				delete data.exp;
-// 				token.primaryToken = jwt.sign(data, "primaryToken");
-// 				res.send({ user: data, tokens: token });
-// 			} else {
-// 				res.send(403);
-// 			}
-// 		} catch (err) {
-// 			res.send(err.message);
-// 		}
-// 	} else {
-// 		res.status(401).send({ message: "token is missing" });
-// 	}
-// });
+userRoute.get("/", async (req, res) => {
+	const authorization: string | undefined = req.headers.authorization;
+	if (authorization) {
+		const auth: string[] = authorization.split(" ");
+		let refreshToken: string = auth[1];
+		// console.log(token.refreshToken);
+		if (refreshToken) {
+			res.send(await getUserDetails(refreshToken));
+		} else {
+			res.send({
+				message: "token not provided.",
+			});
+		}
+	} else {
+		res.status(401).send({ message: "token is missing" });
+	}
+});
 
 // // refresh token
 // userRoute.post("/refresh", async (req, res) => {
