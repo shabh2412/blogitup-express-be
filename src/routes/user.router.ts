@@ -70,89 +70,84 @@ userRoute.post<any, any, any, IUserLogin>("/login", async (req, res) => {
 	}
 });
 
-// // OAUTH
-// userRoute.post("/login/github", async (req, res) => {
-// 	const { code, state } = req.query;
-// 	// console.log(code, state);
-// 	try {
-// 		let response = await axios.post<oAuthGHVerificationType>(
-// 			`https://github.com/login/oauth/access_token`,
-// 			null,
-// 			{
-// 				params: {
-// 					client_id: "c6c281322a00b7b88b67",
-// 					client_secret: "8cdd77e7580c67a7799522e5dc1e6bed5207c6e9",
-// 					code,
-// 				},
-// 				headers: {
-// 					accept: "application/json",
-// 				},
-// 			}
-// 		);
-// 		let resp = response.data;
-// 		let userData = await axios.get<oAuthGitHubVerfiedUserResponse>(
-// 			"https://api.github.com/user",
-// 			{
-// 				headers: {
-// 					Authorization: `Bearer ${resp.access_token}`,
-// 					accept: "application/json",
-// 				},
-// 			}
-// 		);
-// 		let userDataFromGH = userData.data;
-// 		let userExists = await doesUserExistInDb(userDataFromGH.email);
-// 		if (!userExists) {
-// 			const { name, email, phone } = userDataFromGH;
-// 			const newUser = new UserModel({
-// 				name,
-// 				email,
-// 				phone,
-// 				viaOauth: true,
-// 			});
-// 			console.log(newUser);
-// 			await newUser.save();
-// 		}
-// 		console.log(userExists);
-// 		let user = await UserModel.findOne({ email: userDataFromGH.email });
-// 		const userDataFromDB = {
-// 			_id: user._id,
-// 			name: user.name,
-// 			email: user.email,
-// 			phone: user.phone,
-// 			role: user.role || "user",
-// 			viaOauth: user.viaOauth,
-// 		};
-// 		let primaryToken = jwt.sign(userDataFromDB, "primaryToken", {
-// 			expiresIn: "1 hour",
-// 		});
-// 		let refreshToken = jwt.sign(userDataFromDB, "refreshToken", {
-// 			expiresIn: "7 days",
-// 		});
-// 		return res.send(
-// 			{
-// 				data: userDataFromDB,
-// 				tokens: {
-// 					primaryToken,
-// 					refreshToken,
-// 				},
-// 			},
-// 			200
-// 		);
-// 	} catch (error) {
-// 		res.send(
-// 			{
-// 				message: error.message,
-// 			},
-// 			401
-// 		);
-// 	}
-// });
+const doesUserExistInDb = async (email: string) => {
+	const user = await UserModel.findOne({ email });
+	if (user) return true;
+	return false;
+};
 
-// const doesUserExistInDb = async (email: string) => {
-// 	const user = await UserModel.findOne({ email });
-// 	if (user) return true;
-// 	return false;
-// };
+// OAUTH
+userRoute.post("/login/github", async (req, res) => {
+	const { code, state } = req.query;
+	// console.log(code, state);
+	try {
+		let response = await axios.post(
+			`https://github.com/login/oauth/access_token`,
+			null,
+			{
+				params: {
+					client_id: "c6c281322a00b7b88b67",
+					client_secret: "8cdd77e7580c67a7799522e5dc1e6bed5207c6e9",
+					code,
+				},
+				headers: {
+					accept: "application/json",
+				},
+			}
+		);
+		let resp = response.data;
+		let userData = await axios.get("https://api.github.com/user", {
+			headers: {
+				Authorization: `Bearer ${resp.access_token}`,
+				accept: "application/json",
+			},
+		});
+		let userDataFromGH = userData.data;
+		let userExists = await doesUserExistInDb(userDataFromGH.email);
+		if (!userExists) {
+			const { name, email, phone } = userDataFromGH;
+			const newUser = new UserModel({
+				name,
+				email,
+				phone,
+				viaOauth: true,
+			});
+			console.log(newUser);
+			await newUser.save();
+		}
+		console.log(userExists);
+		let user: HydratedDocument<IUser> | null = await UserModel.findOne({
+			email: userDataFromGH.email,
+		});
+		if (user) {
+			const userDataFromDB = {
+				_id: user._id,
+				name: user.name,
+				email: user.email,
+				phone: user.phone,
+				role: user.role || "user",
+				viaOauth: user.viaOauth,
+			};
+			let primaryToken = jwt.sign(userDataFromDB, "primaryToken", {
+				expiresIn: "1 hour",
+			});
+			let refreshToken = jwt.sign(userDataFromDB, "refreshToken", {
+				expiresIn: "7 days",
+			});
+			return res.status(200).send({
+				data: userDataFromDB,
+				tokens: {
+					primaryToken,
+					refreshToken,
+				},
+			});
+		}
+	} catch (error) {
+		res.status(401).send({
+			error,
+		});
+	}
+});
 
 // signup
 userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
