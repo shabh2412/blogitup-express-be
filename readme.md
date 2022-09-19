@@ -10,5 +10,3 @@
 4. `npm run dev`
 5. Go to `http://localhost:8080/` - you should be able to see the package.json file being served.
 6. You can check out the available routes in `index.ts` and the routes folder, and make requests using postman.
-
-![index page screenshot](./public//indexSS.png)
