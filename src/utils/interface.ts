@@ -21,6 +21,11 @@ export interface UserJWTInterface {
 	role: "admin" | "user";
 }
 
+export interface IUserLogin {
+	email: string;
+	password: string;
+}
+
 export interface oAuthGHVerificationInterface {
 	data: oAuthGHVerificationType;
 	access_token: string;

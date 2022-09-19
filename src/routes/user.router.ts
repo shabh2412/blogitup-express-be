@@ -6,12 +6,10 @@ import { access } from "../permissions/acesses";
 import { UserModel } from "../schemas/";
 import axios from "axios";
 import {
-	errType,
-	oAuthGHVerificationType,
-	oAuthGitHubVerfiedUserResponse,
-	UserLoginDataType,
-} from "../utils/types";
-import { IUser, oAuthGHVerificationInterface } from "../utils/interface";
+	IUser,
+	IUserLogin,
+	oAuthGHVerificationInterface,
+} from "../utils/interface";
 import { HydratedDocument } from "mongoose";
 const userRoute = express.Router();
 userRoute.use(express.json());
@@ -28,47 +26,49 @@ userRoute.use(express.json());
 
 // login
 // check if the email and password hash matches or not.
-// userRoute.post<any, any, any, UserLoginDataType>("/login", async (req, res) => {
-// 	let { email, password } = req.body;
-// 	if (email && password) {
-// 		let user = await UserModel.findOne({ email });
-// 		if (user) {
-// 			try {
-// 				const matched = await argon2.verify(user.password, password);
-// 				const userData = {
-// 					_id: user._id,
-// 					name: user.name,
-// 					email: user.email,
-// 					phone: user.phone,
-// 					role: user.role || "user",
-// 				};
-// 				if (matched) {
-// 					let primaryToken = jwt.sign(userData, "primaryToken", {
-// 						expiresIn: "1 hour",
-// 					});
-// 					let refreshToken = jwt.sign(userData, "refreshToken", {
-// 						expiresIn: "7 days",
-// 					});
-// 					res.status(200).send({
-// 						data: userData,
-// 						tokens: {
-// 							primaryToken,
-// 							refreshToken,
-// 						},
-// 					});
-// 				} else {
-// 					res.status(401).send({ message: "invalid credentials" });
-// 				}
-// 			} catch (err) {
-// 				res.send(err);
-// 			}
-// 		} else {
-// 			res.send(404);
-// 		}
-// 	} else {
-// 		res.send("incomplete data");
-// 	}
-// });
+userRoute.post<any, any, any, IUserLogin>("/login", async (req, res) => {
+	let { email, password } = req.body;
+	if (email && password) {
+		let user: HydratedDocument<IUser> | null = await UserModel.findOne({
+			email,
+		});
+		if (user) {
+			try {
+				const matched = await argon2.verify(user.password, password);
+				const userData = {
+					_id: user._id,
+					name: user.name,
+					email: user.email,
+					phone: user.phone,
+					role: user.role || "user",
+				};
+				if (matched) {
+					let primaryToken = jwt.sign(userData, "primaryToken", {
+						expiresIn: "1 hour",
+					});
+					let refreshToken = jwt.sign(userData, "refreshToken", {
+						expiresIn: "7 days",
+					});
+					res.status(200).send({
+						data: userData,
+						tokens: {
+							primaryToken,
+							refreshToken,
+						},
+					});
+				} else {
+					res.status(401).send({ message: "invalid credentials" });
+				}
+			} catch (err) {
+				res.send(err);
+			}
+		} else {
+			res.status(404).send("user does not exist.");
+		}
+	} else {
+		res.send("incomplete data");
+	}
+});
 
 // // OAUTH
 // userRoute.post("/login/github", async (req, res) => {
