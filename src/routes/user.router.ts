@@ -8,6 +8,7 @@ import { HydratedDocument } from "mongoose";
 
 import {
 	doesUserExistInDb,
+	generateRefreshToken,
 	getUserDetails,
 	githubLogin,
 	loginController,
@@ -57,34 +58,6 @@ userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
 	}
 });
 
-// // admin only route
-// userRoute.get("/allUsers", async (req, res) => {
-// 	const auth = req.headers.authorization;
-// 	// console.log(access);
-// 	if (auth) {
-// 		try {
-// 			let token = auth.split(" ")[1];
-// 			let verified = jwt.verify(token, "primaryToken");
-// 			if (verified) {
-// 				let role = verified.role;
-// 				if (role === "admin") {
-// 					let users = await UserModel.find({});
-// 					res.send(users);
-// 				} else {
-// 					res.send({ message: "only admins are allowed" }, 401);
-// 				}
-// 			}
-// 		} catch (error) {
-// 			res.send(error.message);
-// 		}
-// 	} else {
-// 		res.send(403);
-// 	}
-// });
-// // userRoute.delete("/:user_id", async (req, res) => {
-// // 	const token = req.headers;
-// // });
-
 // get details of logged in user.
 userRoute.get("/", async (req, res) => {
 	const authorization: string | undefined = req.headers.authorization;
@@ -105,24 +78,9 @@ userRoute.get("/", async (req, res) => {
 });
 
 // // refresh token
-// userRoute.post("/refresh", async (req, res) => {
-// 	const { refreshToken } = req.body;
-// 	try {
-// 		let verify = jwt.verify(refreshToken, "refreshToken");
-// 		if (verify) {
-// 			delete verify.iat;
-// 			delete verify.exp;
-// 			const primaryToken = jwt.sign(verify, "primaryToken");
-// 			res.send({
-// 				primaryToken,
-// 				refreshToken,
-// 			});
-// 		} else {
-// 			res.send({ message: "kindly login again" });
-// 		}
-// 	} catch (err) {
-// 		res.send({ message: err.message });
-// 	}
-// });
+userRoute.post("/refresh", async (req, res) => {
+	const { refreshToken } = req.body;
+	res.send(generateRefreshToken(refreshToken));
+});
 
 export { userRoute };

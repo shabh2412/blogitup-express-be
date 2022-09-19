@@ -9,14 +9,41 @@ import {
 	signupControllerFailure,
 	signupControllerSuccess,
 	userLoginSuccessData,
+	tokenType,
+	generalErrorType,
 } from "../utils/types";
 import axios from "axios";
 
-export const getUserDetails = async (
+export const generateRefreshToken = (
 	refreshToken: string
+): tokenType | generalErrorType => {
+	try {
+		let verify: JwtPayload | string = jwt.verify(refreshToken, "refreshToken");
+		if (typeof verify !== "string") {
+			delete verify.iat;
+			delete verify.exp;
+			const primaryToken = jwt.sign(verify, "primaryToken", {
+				expiresIn: "1 hour",
+			});
+			console.log(refreshToken);
+			console.log(verify, primaryToken);
+			return {
+				primaryToken,
+				refreshToken,
+			};
+		} else {
+			return { message: "kindly login again" };
+		}
+	} catch (err) {
+		return { message: err };
+	}
+};
+
+export const getUserDetails = async (
+	primaryToken: string
 ): Promise<userFound | errorWhileFindingUserInDb> => {
 	try {
-		let data: JwtPayload | string = jwt.verify(refreshToken, "refreshToken");
+		let data: JwtPayload | string = jwt.verify(primaryToken, "primaryToken");
 		if (typeof data !== "string") {
 			delete data.iat;
 			delete data.exp;
@@ -33,8 +60,10 @@ export const getUserDetails = async (
 					email,
 					role,
 				};
-				const primaryToken = jwt.sign(data, "primaryToken");
-				let token = { refreshToken, primaryToken };
+				const primaryToken = jwt.sign(data, "primaryToken", {
+					expiresIn: "1 hour",
+				});
+				let token = { primaryToken };
 				return { data: userData, tokens: token };
 			} else {
 				return {
@@ -148,10 +177,10 @@ export const loginController = async (
 			};
 			if (matched) {
 				let primaryToken = jwt.sign(userData, "primaryToken", {
-					expiresIn: "1 hour",
+					expiresIn: "4 days",
 				});
 				let refreshToken = jwt.sign(userData, "refreshToken", {
-					expiresIn: "7 days",
+					expiresIn: "14 days",
 				});
 				return {
 					data: userData,

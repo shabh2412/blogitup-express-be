@@ -39,7 +39,7 @@ export type userFound = {
 	data: userLoginSuccessData;
 	tokens: {
 		primaryToken: string;
-		refreshToken: string;
+		refreshToken?: string;
 	};
 };
 
@@ -51,5 +51,9 @@ export type signupControllerSuccess = {
 	user: HydratedDocument<IUser>;
 };
 export type signupControllerFailure = {
+	message: string | any;
+};
+
+export type generalErrorType = {
 	message: string | any;
 };
