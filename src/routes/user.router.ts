@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import argon2 from "argon2";
 import { access } from "../permissions/acesses";
 
-import { UserModel } from "../schemas/";
+import { UserModel } from "../models";
 import axios from "axios";
 import {
 	IUser,
@@ -11,6 +11,8 @@ import {
 	oAuthGHVerificationInterface,
 } from "../utils/interface";
 import { HydratedDocument } from "mongoose";
+import { tokenType } from "../utils/types";
+import { loginController } from "../controllers/user.controller";
 const userRoute = express.Router();
 userRoute.use(express.json());
 
@@ -29,42 +31,7 @@ userRoute.use(express.json());
 userRoute.post<any, any, any, IUserLogin>("/login", async (req, res) => {
 	let { email, password } = req.body;
 	if (email && password) {
-		let user: HydratedDocument<IUser> | null = await UserModel.findOne({
-			email,
-		});
-		if (user) {
-			try {
-				const matched = await argon2.verify(user.password, password);
-				const userData = {
-					_id: user._id,
-					name: user.name,
-					email: user.email,
-					phone: user.phone,
-					role: user.role || "user",
-				};
-				if (matched) {
-					let primaryToken = jwt.sign(userData, "primaryToken", {
-						expiresIn: "1 hour",
-					});
-					let refreshToken = jwt.sign(userData, "refreshToken", {
-						expiresIn: "7 days",
-					});
-					res.status(200).send({
-						data: userData,
-						tokens: {
-							primaryToken,
-							refreshToken,
-						},
-					});
-				} else {
-					res.status(401).send({ message: "invalid credentials" });
-				}
-			} catch (err) {
-				res.send(err);
-			}
-		} else {
-			res.status(404).send("user does not exist.");
-		}
+		res.send(await loginController(email, password));
 	} else {
 		res.send("incomplete data");
 	}
@@ -195,12 +162,12 @@ userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
 // // 	const token = req.headers;
 // // });
 
-// // get details of logged in user.
+// get details of logged in user.
 // userRoute.get("/", async (req, res) => {
 // 	const authorization = req.headers.authorization;
 // 	if (authorization) {
 // 		const auth = authorization.split(" ");
-// 		const token = {};
+// 		const token: tokenType = {};
 // 		token.refreshToken = auth[1];
 // 		// console.log(token.refreshToken);
 // 		try {
@@ -218,7 +185,7 @@ userRoute.post<any, any, any, IUser>("/post", async (req, res) => {
 // 			res.send(err.message);
 // 		}
 // 	} else {
-// 		res.send({ message: "token is missing" }, 401);
+// 		res.status(401).send({ message: "token is missing" });
 // 	}
 // });
 

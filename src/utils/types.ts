@@ -3,6 +3,14 @@ export type UserLoginDataType = {
 	password: string;
 };
 
+export type userLoginSuccessData = {
+	_id: any;
+	name: string;
+	email: string;
+	phone: string;
+	role: "admin" | "user";
+};
+
 // error type
 export type errType = {
 	message: string;
@@ -17,4 +25,21 @@ export type oAuthGitHubVerfiedUserResponse = {
 	name: string;
 	email: string;
 	phone: string;
+};
+
+export type tokenType = {
+	primaryToken?: string;
+	refreshToken?: string;
+};
+
+export type loginControllerSuccess = {
+	data: userLoginSuccessData;
+	tokens: {
+		primaryToken: string;
+		refreshToken: string;
+	};
+};
+
+export type loginControllerFailure = {
+	message: string | any;
 };
