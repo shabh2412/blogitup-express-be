@@ -8,6 +8,7 @@ export interface IUser {
 	createdAt: Date;
 }
 
+import { Types } from "mongoose";
 import {
 	oAuthGHVerificationType,
 	oAuthGitHubVerfiedUserResponse,
@@ -34,3 +35,25 @@ export interface oAuthGHVerificationInterface {
 export interface oAuthGitHubVerUserInterface {
 	data: oAuthGitHubVerfiedUserResponse;
 }
+
+export interface IComment {
+	message: string;
+	date: Date;
+	by: Types.ObjectId | string;
+}
+export interface IBlog {
+	title: string;
+	author: Types.ObjectId | string;
+	body: string;
+	date: Date;
+	hidden: boolean;
+	meta: {
+		votes: number;
+		favs: number;
+	};
+	comments: Array<Comment>;
+}
+
+// export interface IBlogComment {
+
+// }
