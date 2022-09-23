@@ -1,11 +1,12 @@
 import express from "express";
-import { config } from "../config/config";
 import mongoose from "mongoose";
+import { config } from "../config/config";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { userRoute } from "./routes/user.router";
+import { blogRoute } from "./routes/blog.router";
 
-const port: number = config.env.dev.port;
+const port: number | string = process.env.PORT || config.env.dev.port;
 const dbConfig = config.env.dev.dbConfig;
 
 const app = express();
@@ -18,6 +19,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/users", userRoute);
+app.use("/blogs", blogRoute);
 
 mongoose
 	.connect(dbConfig.url)
