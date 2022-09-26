@@ -2,7 +2,11 @@ import { CommentModel } from "../models/comment.schema";
 import { json } from "body-parser";
 import { Router } from "express";
 import { IBlog } from "../utils/interface";
-import { getBlogs, postBlog } from "../controllers/blogs.controller";
+import {
+	deleteBlog,
+	getBlogs,
+	postBlog,
+} from "../controllers/blogs.controller";
 
 console.log(CommentModel);
 const blogRoute = Router();
@@ -27,6 +31,18 @@ blogRoute.post<any, any, any, IBlog>("/post", async (req, res) => {
 		}
 	} catch (err) {
 		res.send({ message: err });
+	}
+});
+
+blogRoute.delete("/:_id", async (req, res) => {
+	const _id = req.params._id;
+	if (_id) {
+		let response = await deleteBlog(_id);
+		res.send(response);
+	} else {
+		res.send({
+			message: "_id params is missing",
+		});
 	}
 });
 

@@ -58,3 +58,7 @@ export const postBlog = async (auth: string, blogData: IBlog) => {
 	}
 };
 
+export const deleteBlog = async (_id: string) => {
+	let res = await BlogModel.findByIdAndDelete({ _id });
+	return res;
+};
