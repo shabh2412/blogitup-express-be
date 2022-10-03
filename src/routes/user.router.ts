@@ -83,4 +83,16 @@ userRoute.post("/refresh", async (req, res) => {
 	res.send(generateRefreshToken(refreshToken));
 });
 
+// get all users
+userRoute.get("/allUsers", async (req, res) => {
+	let users = await UserModel.find({});
+	res.send(users);
+});
+
+// delete user account
+userRoute.delete("/:_id", async (req, res) => {
+	let user = await UserModel.findByIdAndDelete(req.params._id);
+	res.status(202).send(user);
+});
+
 export { userRoute };
