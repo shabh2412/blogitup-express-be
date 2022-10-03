@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 export const config = {
 	env: {
 		dev: {
@@ -8,7 +10,7 @@ export const config = {
 		},
 		// production configs come here.
 		prod: {
-			port: 8080,
+			port: process.env.PORT || 8080,
 			dbConfig: {
 				url: `mongodb+srv://rishabh-mongo:mongodb-free@cluster0.v9a14sg.mongodb.net/myBlogs?retryWrites=true&w=majority`,
 			},
