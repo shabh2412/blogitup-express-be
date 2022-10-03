@@ -7,12 +7,18 @@ import { userRoute } from "./routes/user.router";
 import { blogRoute } from "./routes/blog.router";
 
 const port: number | string = process.env.PORT || config.env.dev.port;
-const dbConfig = config.env.dev.dbConfig;
+const dbConfig = config.env.prod.dbConfig;
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+
+// Logging middleware
+// app.use((req, res, next) => {
+// 	console.log(req);
+// 	next();
+// });
 
 app.get("/", (req, res) => {
 	res.sendFile(process.cwd() + "/package.json");
